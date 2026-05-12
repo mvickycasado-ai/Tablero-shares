@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard Competencia · Shares CR · Unilever</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",system-ui,sans-serif;background:linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%);color:#e8e8f0;min-height:100vh;padding:20px}
+.container{max-width:1800px;margin:0 auto}
+header{background:rgba(255,255,255,.05);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+h1{background:linear-gradient(90deg,#667eea,#f093fb);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:26px}
+.subtitle{color:#a0a0c0;font-size:13px;margin-top:4px}
+.btn{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:0;padding:10px 18px;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;transition:.2s;text-decoration:none;display:inline-block}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(102,126,234,.4)}
+.btn-secondary{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15)}
+.mode-toggle{display:flex;gap:6px;background:rgba(0,0,0,.25);padding:4px;border-radius:10px}
+.mode-toggle button{background:transparent;color:#c0c0e0;border:0;padding:7px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600}
+.mode-toggle button.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.filters{background:rgba(255,255,255,.05);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px;margin-bottom:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;position:relative;z-index:500}
+.filter-group label{display:block;font-size:11px;color:#a0a0c0;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.filter-group select{width:100%;padding:9px 12px;background:rgba(15,12,41,.6);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:8px;font-size:13px;outline:none}
+.ms{position:relative;width:100%}
+.ms-toggle{width:100%;padding:9px 12px;background:rgba(15,12,41,.6);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:8px;font-size:13px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-height:36px}
+.ms-toggle:hover{border-color:#667eea}
+.ms-count{background:#667eea;color:#fff;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:700;margin-left:6px}
+.ms-panel{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#1a1737;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px;z-index:9999;max-height:340px;overflow:auto;display:none;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.ms-panel.open{display:block}
+.ms-search{width:100%;padding:7px 10px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:6px;font-size:12px;margin-bottom:6px;outline:none}
+.ms-actions{display:flex;gap:6px;margin-bottom:6px}
+.ms-actions button{flex:1;padding:5px;background:rgba(102,126,234,.2);border:1px solid rgba(102,126,234,.3);color:#c0c0ff;border-radius:5px;font-size:11px;cursor:pointer}
+.ms-actions button:hover{background:rgba(102,126,234,.35)}
+.ms-options{display:flex;flex-direction:column;gap:2px}
+.ms-opt{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:5px;cursor:pointer;font-size:12px}
+.ms-opt:hover{background:rgba(255,255,255,.06)}
+.ms-opt input{cursor:pointer}
+.ms-opt span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card{background:rgba(255,255,255,.05);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:22px;margin-bottom:20px}
+.card h3{font-size:15px;color:#c0c0e0;margin-bottom:14px;font-weight:600}
+.card .h-sub{font-size:12px;color:#8a8ab0;margin-bottom:14px;font-weight:400}
+.hero{background:linear-gradient(135deg,rgba(102,126,234,.2),rgba(240,147,251,.15));border:1px solid rgba(102,126,234,.3)}
+.hero-vol{background:linear-gradient(135deg,rgba(34,197,94,.18),rgba(102,126,234,.1));border:1px solid rgba(34,197,94,.3)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi{padding:16px;background:rgba(0,0,0,.25);border-radius:12px;border:1px solid rgba(255,255,255,.08)}
+.kpi-label{font-size:11px;color:#a0a0c0;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.kpi-value{font-size:24px;font-weight:700;margin:6px 0;background:linear-gradient(90deg,#fff,#c0c0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.kpi-sub{font-size:12px;color:#a0a0c0}
+.up{color:#4ade80}.down{color:#f87171}.neutral{color:#a0a0c0}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:1100px){.charts-grid{grid-template-columns:1fr}}
+.chart-box{position:relative;height:320px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:10px;background:rgba(102,126,234,.15);color:#c0c0e0;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1);position:sticky;top:0;z-index:1}
+td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05)}
+tr:hover{background:rgba(255,255,255,.03)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.table-wrap{max-height:520px;overflow:auto;border-radius:8px}
+.hidden{display:none!important}
+.empty-state{text-align:center;padding:60px 20px;color:#a0a0c0}
+.empty-state svg{width:60px;height:60px;opacity:.3;margin-bottom:16px}
+.error-box{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fecaca;padding:14px;border-radius:10px;margin:14px 0;font-size:13px;font-family:monospace;white-space:pre-wrap}
+.gap-pos{background:rgba(34,197,94,.12);color:#4ade80;padding:2px 6px;border-radius:4px}
+.gap-neg{background:rgba(239,68,68,.12);color:#f87171;padding:2px 6px;border-radius:4px}
+.tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-right:4px}
+.tag-uni{background:linear-gradient(135deg,rgba(102,126,234,.3),rgba(240,147,251,.25));color:#fff;border:1px solid rgba(240,147,251,.4)}
+.tag-comp{background:rgba(160,160,192,.2);color:#c0c0e0;border:1px solid rgba(160,160,192,.3)}
+.row-uni{background:linear-gradient(90deg,rgba(102,126,234,.08),transparent)}
+.tendencia{display:inline-block;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;margin-top:6px}
+.t-up{background:rgba(34,197,94,.2);color:#4ade80;border:1px solid rgba(34,197,94,.4)}
+.t-flat{background:rgba(160,160,192,.15);color:#c0c0e0;border:1px solid rgba(160,160,192,.3)}
+.t-down{background:rgba(239,68,68,.2);color:#f87171;border:1px solid rgba(239,68,68,.4)}
+.chat-card{background:linear-gradient(135deg,rgba(102,126,234,.15),rgba(240,147,251,.1));border:1px solid rgba(102,126,234,.3)}
+.chat-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chat-chip{background:rgba(102,126,234,.2);border:1px solid rgba(102,126,234,.35);color:#c0c0ff;padding:7px 14px;border-radius:20px;font-size:12px;cursor:pointer;transition:.2s}
+.chat-chip:hover{background:rgba(102,126,234,.4);transform:translateY(-1px)}
+.chat-input{display:flex;gap:8px;margin-bottom:14px}
+.chat-input input{flex:1;padding:10px 14px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:8px;font-size:13px;outline:none}
+.chat-input input:focus{border-color:#667eea}
+.chat-response{background:rgba(0,0,0,.25);border-left:3px solid #667eea;padding:14px 16px;border-radius:8px;font-size:13px;line-height:1.7;min-height:60px;white-space:pre-wrap}
+.chat-response strong{color:#f0abfc}
+.chat-response .up{color:#4ade80;font-weight:700}
+.chat-response .down{color:#f87171;font-weight:700}
+.paste-area{margin:14px 0;padding:14px;background:rgba(0,0,0,.2);border-radius:10px;border:1px dashed rgba(255,255,255,.15)}
+".row-am{cursor:pointer;transition:.15s}.row-am:hover{background:rgba(102,126,234,.1)}.row-am .caret{display:inline-block;transition:transform .2s;color:#a5b4fc;margin-right:4px}.row-am.expanded .caret{transform:rotate(90deg)}.detail-row{background:rgba(0,0,0,.3)}.detail-row td{padding:0 !important;border-bottom:1px solid rgba(255,255,255,.05)}.detail-inner{padding:12px 18px;border-left:3px solid #a5b4fc}.detail-title{font-size:11px;color:#a5b4fc;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px}.detail-table{width:100%;font-size:11px}.detail-table th{background:rgba(165,180,252,.1);padding:6px 10px;font-size:10px;position:static}.detail-table td{padding:5px 10px}
+</style>"
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<div><h1>🎯 Dashboard Competencia · Shares CR</h1>
+<div class="subtitle">Sell-Out Scentia · Cadenas Regionales · Unilever vs Mercado · Volumen + Valor + Impacto $</div></div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+<input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+<button class="btn" onclick="document.getElementById('fileInput').click()">📁 Cargar Excel</button>
+<button class="btn btn-secondary" onclick="exportCSV()">⬇ Export CSV</button>
+</div></header>
+<div id="emptyState" class="card empty-state">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18L19.82 8 12 11.82 4.18 8 12 4.18zM4 9.84l7 3.5v7.32l-7-3.5V9.84zm9 10.82v-7.32l7-3.5v7.32l-7 3.5z"/></svg>
+<h3 style="margin-bottom:10px">Cargá tu archivo BaseSellIn.xlsx</h3>
+<p>Buscamos la hoja <strong>Shares CR</strong> con columnas: GRUPO BANDERA, Negocio, Categoría, Fabricante, Marca, Tamaño, Tier, Año, Mes, NroMes, Periodo_Seleccionado_Val, Periodo_Seleccionado_Vol.</p>
+<div class="paste-area">
+<label style="font-size:12px;color:#a0a0c0">O pegá CSV/TSV (incluyendo header):</label>
+<textarea id="pasteArea" placeholder="GRUPO BANDERA\tNegocio\tCategoría\t..."></textarea>
+<button class="btn" style="margin-top:8px" onclick="loadFromPaste()">Cargar desde texto</button>
+</div>
+<div id="errorBox" class="error-box hidden"></div>
+</div>
+<div id="dashContent" class="hidden">
+<div id="errorBoxTop" class="error-box hidden"></div>
+<!-- FILTROS -->
+<div class="filters" id="filtersContainer">
+<div class="filter-group"><label>📅 Modo</label>
+<div class="mode-toggle" id="modeToggle">
+<button id="btnModeMes" class="active" onclick="setMode('mes')">Por Mes</button>
+<button id="btnModeYTD" onclick="setMode('ytd')">YTD</button>
+</div></div>
+<div class="filter-group" id="grpMeses"><label>📅 Meses (Año-Mes)</label><div id="msMeses"></div></div>
+<div class="filter-group hidden" id="grpYTDAnio"><label>📅 Año YTD</label><select id="selYTDAnio"></select></div>
+<div class="filter-group hidden" id="grpYTDCorte"><label>📅 Mes corte</label><select id="selYTDCorte"></select></div>
+<div class="filter-group"><label>🏪 Grupo Bandera</label><div id="msBandera"></div></div>
+<div class="filter-group"><label>💼 Negocio</label><div id="msNegocio"></div></div>
+<div class="filter-group"><label>📦 Categoría</label><div id="msCategoria"></div></div>
+<div class="filter-group"><label>🏭 Fabricante</label><div id="msFabricante"></div></div>
+<div class="filter-group"><label>🏷️ Marca</label><div id="msMarca"></div></div>
+<div class="filter-group"><label>💎 Tier</label><div id="msTier"></div></div>
+<div class="filter-group"><label>📏 Tamaño</label><div id="msTamano"></div></div>
+</div>
+<!-- BLOQUE 1: MERCADO -->
+<div class="card hero-vol">
+<h3>📈 Bloque 1 · Mercado CR — ¿Cómo viene?</h3>
+<div class="h-sub">Foco: VOLUMEN. Valor secundario.</div>
+<div class="kpi-grid">
+<div class="kpi"><div class="kpi-label">Volumen Mercado Actual</div><div class="kpi-value" id="kVolAct">—</div><div class="kpi-sub" id="kVolActSub">—</div></div>
+<div class="kpi"><div class="kpi-label">Volumen Mercado LY</div><div class="kpi-value" id="kVolLy">—</div><div class="kpi-sub" id="kVolLySub">—</div></div>
+<div class="kpi"><div class="kpi-label">Var % Volumen YoY</div><div class="kpi-value" id="kVolVar">—</div><div class="kpi-sub" id="kTendencia">—</div></div>
+<div class="kpi"><div class="kpi-label">Valor Mercado (secundario)</div><div class="kpi-value" id="kValMkt">—</div><div class="kpi-sub" id="kValMktSub">—</div></div>
+</div></div>
+<div class="card">
+<h3>📊 Evolución mensual del mercado CR</h3>
+<div class="h-sub">Línea principal: Volumen · Línea secundaria: Valor</div>
+<div class="chart-box" style="height:340px"><canvas id="chartMkt"></canvas></div>
+</div>
+<!-- BLOQUE 2: SHARES -->
+<div class="card hero">
+<h3>🥇 Bloque 2 · Share por Fabricante (VALOR)</h3>
+<div class="h-sub">Ranking por Share VAL · Δ Share en pp · UNILEVER resaltado</div>
+<div class="table-wrap"><table id="tblFab"><thead><tr><th>#</th><th>Fabricante</th><th class="num">Val Actual</th><th class="num">Val LY</th><th class="num">Var %</th><th class="num">Share Act</th><th class="num">Share LY</th><th class="num">Δ Share (pp)</th></tr></thead><tbody></tbody></table></div>
+</div>
+<div class="charts-grid">
+<div class="card"><h3>🚀 Top 10 Winners — Marcas</h3><div class="h-sub">Ordenado por IMPACTO en VALOR ($)</div><div class="table-wrap"><table id="tblWin"><thead><tr><th>Marca</th><th>Fab.</th><th class="num">Δ Share (pp)</th><th class="num">Impacto $</th><th class="num">Var %</th></tr></thead><tbody></tbody></table></div></div>
+<div class="card"><h3>📉 Top 10 Losers — Marcas</h3><div class="h-sub">Ordenado por IMPACTO en VALOR ($)</div><div class="table-wrap"><table id="tblLose"><thead><tr><th>Marca</th><th>Fab.</th><th class="num">Δ Share (pp)</th><th class="num">Impacto $</th><th class="num">Var %</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+<div class="charts-grid">
+<div class="card"><h3>📏 Mix por Tamaño · Unilever vs Mercado</h3><div class="h-sub">% del valor en cada tamaño</div><div class="chart-box"><canvas id="chartTam"></canvas></div></div>
+<div class="card"><h3>💎 Mix por Tier · Unilever vs Mercado</h3><div class="h-sub">% del valor en cada tier</div><div class="chart-box"><canvas id="chartTier"></canvas></div></div>
+</div>
+<div class="card">
+<h3>📈 Evolución de Share · Unilever vs Top Competidor #1</h3>
+<div class="h-sub" id="topCompLabel">Top competidor: —</div>
+<div class="chart-box" style="height:320px"><canvas id="chartShareEvol"></canvas></div>
+</div>
+<!-- BLOQUE 3: OPORTUNIDADES Y AMENAZAS -->
+<div class="card">
+<h3>🎯 Bloque 3a · Oportunidades para Unilever</h3>
+<div class="h-sub">Segmentos donde el mercado crece pero Unilever pierde terreno · Ordenado por Impacto $</div>
+<div class="table-wrap"><table id="tblOp"><thead><tr><th style="width:30px"></th><th>Categoría</th><th>Tier</th><th>Tamaño</th><th class="num">Var % Mercado</th><th class="num">Var % Unilever</th><th class="num">Δ Share (pp)</th><th class="num">Impacto $</th></tr></thead><tbody></tbody></table></div>
+</div>
+<div class="card">
+<h3>🚨 Bloque 3b · Amenazas</h3>
+<div class="h-sub">Segmentos donde un competidor gana share VAL relevante · Ordenado por Impacto $ a Unilever</div>
+<div class="table-wrap"><table id="tblAm"><thead><tr><th style="width:30px"></th><th>Categoría</th><th>Tier</th><th>Tamaño</th><th>Competidor principal</th><th class="num">Δ Share Comp (pp)</th><th class="num">Impacto $ Comp</th><th class="num">Δ Share Uni (pp)</th><th class="num">Impacto $ Uni</th></tr></thead><tbody></tbody></table></div>
+</div>
+<!-- CHAT IA -->
+<div class="card chat-card">
+<h3>🤖 Asistente IA · Preguntá sobre la competencia</h3>
+<div class="chat-chips">
+<div class="chat-chip" onclick="askChat('resumen')">📊 Resumen mercado</div>
+<div class="chat-chip" onclick="askChat('share unilever')">🏆 Share Unilever</div>
+<div class="chat-chip" onclick="askChat('top competidor')">⚔️ Top competidor</div>
+<div class="chat-chip" onclick="askChat('mejor marca')">🚀 Marca winner</div>
+<div class="chat-chip" onclick="askChat('peor marca')">📉 Marca loser</div>
+<div class="chat-chip" onclick="askChat('oportunidades')">🎯 Top oportunidades</div>
+<div class="chat-chip" onclick="askChat('amenazas')">🚨 Top amenazas</div>
+<div class="chat-chip" onclick="askChat('premium')">💎 Mix Premium</div>
+<div class="chat-chip" onclick="askChat('tendencia')">📈 Tendencia mercado</div>
+<div class="chat-chip" onclick="askChat('insight')">💡 Insight ejecutivo</div>
+</div>
+<div class="chat-input">
+<input type="text" id="chatInput" placeholder="Ej: ¿qué marca creció más? ¿dónde tengo oportunidad? ¿quién es el top competidor?">
+<button class="btn" onclick="askChatFromInput()">Preguntar</button>
+</div>
+<div class="chat-response" id="chatResp">Cargá los datos y hacé una pregunta o tocá un chip.</div>
+</div>
+</div>
+</div>
+<script>
+"use strict";
+// ============ ESTADO GLOBAL ============
+let RAW = [];
+let MESES_DISPONIBLES = [];
+let MODE = "mes";
+let CHARTS = {};
+const MES_NAMES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+// ============ FORMATTERS ============
+const fmt = n => { if(n==null||isNaN(n)) return "—"; const a=Math.abs(n); if(a>=1e9) return "$"+(n/1e9).toFixed(2)+"B"; if(a>=1e6) return "$"+(n/1e6).toFixed(2)+"M"; if(a>=1e3) return "$"+(n/1e3).toFixed(1)+"K"; return "$"+n.toFixed(0); };
+const fmtMoney = fmt;
+const fmtVol = n => { if(n==null||isNaN(n)) return "—"; const a=Math.abs(n); if(a>=1e6) return (n/1e6).toFixed(2)+"M"; if(a>=1e3) return (n/1e3).toFixed(1)+"K"; return n.toFixed(2); };
+const fmtPct = n => n==null||isNaN(n) ? "—" : (n*100).toFixed(1)+"%";
+const fmtShare = n => n==null||isNaN(n) ? "—" : (n*100).toFixed(2)+"%";
+const fmtPp = n => n==null||isNaN(n) ? "—" : (n>=0?"+":"")+n.toFixed(2)+" pp";
+const fmtVar = n => n==null||isNaN(n) ? "—" : (n>=0?"+":"")+(n*100).toFixed(1)+"%";
+const safeDiv = (a,b) => (b==null||b===0||isNaN(b)) ? null : a/b;
+const norm = s => (s==null?"":String(s)).trim().toUpperCase();
+// ============ PARSE EXCEL ============
+function parseSheet(rows){
+  if(!rows || rows.length<2) throw new Error("La hoja Shares CR está vacía o no tiene encabezados.");
+  const extractKey = h => { const m = String(h||"").match(/\[([^\]]+)\]\s*$/); return norm(m ? m[1] : h); };
+  const headers = rows[0].map(h => extractKey(h)); const findCol = (...keys) => { const ks = keys.map(k=>norm(k)); for(const k of ks){ const i = headers.findIndex(h => h===k); if(i>=0) return i; } for(const k of ks){ const i = headers.findIndex(h => h.includes(k)); if(i>=0) return i; } return -1; };
+  const idx = {
+    bandera: findCol("GRUPO BANDERA","BANDERA"),
+    negocio: findCol("NEGOCIO"),
+    categoria: findCol("CATEGORÍA","CATEGORIA"),
+    fabricante: findCol("FABRICANTE"),
+    marca: findCol("MARCA"),
+    tamano: findCol("TAMAÑO","TAMANO"),
+    tier: findCol("TIER"),
+    anio: findCol("AÑO","ANIO"),
+    mes: findCol("MES"),
+    nromes: findCol("NROMES","NRO MES","NRO_MES"),
+    val: findCol("PERIODO_SELECCIONADO_VAL","VAL"),
+    vol: findCol("PERIODO_SELECCIONADO_VOL","VOL")
+  };
+  const required = ["fabricante","marca","anio","nromes","val","vol"];
+  const missing = required.filter(k => idx[k] < 0);
+  if(missing.length) throw new Error("Faltan columnas: " + missing.join(", "));
+  const data = [];
+  const toNum = v => { if(v==null||v==="") return null; if(typeof v==="number") return v; const s=String(v).replace(/\./g,"").replace(",","."); const n=parseFloat(s); return isNaN(n)?null:n; };
+  for(let i=1;i<rows.length;i++){
+    const r = rows[i]; if(!r) continue;
+    const fab = norm(r[idx.fabricante]); if(!fab) continue;
+    const anio = toNum(r[idx.anio]); const nro = toNum(r[idx.nromes]);
+    const val = toNum(r[idx.val]); const vol = toNum(r[idx.vol]);
+    if(anio==null || nro==null) continue;
+    data.push({
+      bandera: norm(r[idx.bandera]) || "—",
+      negocio: norm(r[idx.negocio]) || "—",
+      categoria: norm(r[idx.categoria]) || "—",
+      fabricante: fab,
+      marca: norm(r[idx.marca]) || "—",
+      tamano: norm(r[idx.tamano]) || "—",
+      tier: norm(r[idx.tier]) || "—",
+      anio: anio,
+      nromes: nro,
+      mes: idx.mes>=0 ? norm(r[idx.mes]) : MES_NAMES[nro-1] || "",
+      ym: anio*100 + nro,
+      val: val||0,
+      vol: vol||0,
+      isUni: fab === "UNILEVER"
+    });
+  }
+  if(!data.length) throw new Error("No se encontraron filas válidas.");
+  return data;
+}
+// ============ MULTI-SELECT ============
+function buildMs(containerId, options, selected){
+  const cont = document.getElementById(containerId);
+  if(!cont) return;
+  const sel = new Set(selected || options);
+  cont.dataset.selected = JSON.stringify([...sel]);
+  cont.dataset.all = JSON.stringify(options);
+  cont.innerHTML = `<div class="ms"><button class="ms-toggle" type="button"><span class="ms-label">${sel.size} de ${options.length}</span><span class="ms-count">${sel.size}</span></button><div class="ms-panel"><input type="text" class="ms-search" placeholder="Buscar..."><div class="ms-actions"><button type="button" data-act="all">Todo</button><button type="button" data-act="none">Nada</button></div><div class="ms-options"></div></div></div>`;
+  const tog = cont.querySelector(".ms-toggle");
+  const panel = cont.querySelector(".ms-panel");
+  const opts = cont.querySelector(".ms-options");
+  const search = cont.querySelector(".ms-search");
+  function paint(filter){
+    const f = (filter||"").toUpperCase();
+    const cur = new Set(JSON.parse(cont.dataset.selected));
+    opts.innerHTML = options.filter(o => !f || o.toUpperCase().includes(f)).map(o => `<label class="ms-opt"><input type="checkbox" value="${o.replace(/"/g,"&quot;")}" ${cur.has(o)?"checked":""}><span>${o}</span></label>`).join("");
+    opts.querySelectorAll("input").forEach(inp => inp.addEventListener("change", e => {
+      const c = new Set(JSON.parse(cont.dataset.selected));
+      if(e.target.checked) c.add(e.target.value); else c.delete(e.target.value);
+      cont.dataset.selected = JSON.stringify([...c]);
+      tog.querySelector(".ms-label").textContent = `${c.size} de ${options.length}`;
+      tog.querySelector(".ms-count").textContent = c.size;
+      onFiltersChange();
+    }));
+  }
+  paint("");
+  tog.addEventListener("click", e => { e.stopPropagation(); document.querySelectorAll(".ms-panel.open").forEach(p => { if(p!==panel) p.classList.remove("open"); }); panel.classList.toggle("open"); });
+  search.addEventListener("input", e => paint(e.target.value));
+  search.addEventListener("click", e => e.stopPropagation());
+  panel.addEventListener("click", e => e.stopPropagation());
+  cont.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", e => {
+    const act = e.target.dataset.act;
+    const newSel = act === "all" ? [...options] : [];
+    cont.dataset.selected = JSON.stringify(newSel);
+    paint(search.value);
+    tog.querySelector(".ms-label").textContent = `${newSel.length} de ${options.length}`;
+    tog.querySelector(".ms-count").textContent = newSel.length;
+    onFiltersChange();
+  }));
+}
+function getMs(id){ const c = document.getElementById(id); return c && c.dataset.selected ? new Set(JSON.parse(c.dataset.selected)) : new Set(); }
+document.addEventListener("click", () => document.querySelectorAll(".ms-panel.open").forEach(p => p.classList.remove("open")));
+// ============ BUILD FILTERS ============
+function buildFilters(){
+  const banderas = [...new Set(RAW.map(r => r.bandera))].sort();
+  const negs = [...new Set(RAW.map(r => r.negocio))].sort();
+  const cats = [...new Set(RAW.map(r => r.categoria))].sort();
+  const fabs = [...new Set(RAW.map(r => r.fabricante))].sort();
+  const marcas = [...new Set(RAW.map(r => r.marca))].sort();
+  const tiers = [...new Set(RAW.map(r => r.tier))].sort();
+  const tams = [...new Set(RAW.map(r => r.tamano))].sort();
+  const yms = [...new Set(RAW.map(r => r.ym))].sort((a,b) => a-b);
+  MESES_DISPONIBLES = yms;
+  // Por defecto seleccionar solo el ultimo año (Actual + LY se calcula automatico)
+  const maxAnio = Math.max(...RAW.map(r => r.anio));
+  const ymsActuales = yms.filter(ym => Math.floor(ym/100) === maxAnio);
+  const ymLabels = yms.map(ym => `${MES_NAMES[(ym%100)-1]} ${Math.floor(ym/100)}`);
+  const ymLabelsActuales = ymsActuales.map(ym => `${MES_NAMES[(ym%100)-1]} ${Math.floor(ym/100)}`);
+  buildMs("msMeses", ymLabels, ymLabelsActuales);
+  buildMs("msBandera", banderas, banderas);
+  buildMs("msNegocio", negs, negs);
+  buildMs("msCategoria", cats, cats);
+  buildMs("msFabricante", fabs, fabs);
+  buildMs("msMarca", marcas, marcas);
+  buildMs("msTier", tiers, tiers);
+  buildMs("msTamano", tams, tams);
+  // YTD selectors
+  const anios = [...new Set(RAW.map(r => r.anio))].sort((a,b) => b-a);
+  const selA = document.getElementById("selYTDAnio");
+  selA.innerHTML = anios.map(a => `<option value="${a}">${a}</option>`).join("");
+  selA.value = maxAnio;
+  const selC = document.getElementById("selYTDCorte");
+  const maxNro = Math.max(...RAW.filter(r => r.anio === maxAnio).map(r => r.nromes));
+  selC.innerHTML = MES_NAMES.map((m,i) => `<option value="${i+1}">${m}</option>`).join("");
+  selC.value = maxNro;
+  selA.onchange = onFiltersChange;
+  selC.onchange = onFiltersChange;
+}
+function setMode(m){
+  MODE = m;
+  document.getElementById("btnModeMes").classList.toggle("active", m==="mes");
+  document.getElementById("btnModeYTD").classList.toggle("active", m==="ytd");
+  document.getElementById("grpMeses").classList.toggle("hidden", m!=="mes");
+  document.getElementById("grpYTDAnio").classList.toggle("hidden", m!=="ytd");
+  document.getElementById("grpYTDCorte").classList.toggle("hidden", m!=="ytd");
+  onFiltersChange();
+}
+// ============ DETERMINAR PERIODOS ACT vs LY ============
+function getPeriods(){
+  // Devuelve {actSet: Set<ym>, lySet: Set<ym>, label: string}
+  if(MODE === "ytd"){
+    const anio = parseInt(document.getElementById("selYTDAnio").value);
+    const corte = parseInt(document.getElementById("selYTDCorte").value);
+    const actSet = new Set();
+    const lySet = new Set();
+    for(let m=1;m<=corte;m++){ actSet.add(anio*100+m); lySet.add((anio-1)*100+m); }
+    return { actSet, lySet, label: `YTD ${MES_NAMES[corte-1]} ${anio}` };
+  } else {
+    const labels = [...getMs("msMeses")];
+    if(!labels.length) return { actSet: new Set(), lySet: new Set(), label: "Sin meses" };
+    const yms = labels.map(lb => { const [m,a] = lb.split(" "); const idx = MES_NAMES.indexOf(m); return parseInt(a)*100 + (idx+1); });
+    const maxAnio = Math.max(...yms.map(ym => Math.floor(ym/100)));
+    const actSet = new Set(yms.filter(ym => Math.floor(ym/100) === maxAnio));
+    const lySet = new Set([...actSet].map(ym => ym - 100));
+    return { actSet, lySet, label: `${actSet.size} mes(es) seleccionado(s)` };
+  }
+}
+// ============ APPLY FILTERS (sin filtro de período, devuelve solo dimensional) ============
+function applyDimFilter(rows){
+  const fBan = getMs("msBandera"), fNeg = getMs("msNegocio"), fCat = getMs("msCategoria");
+  const fFab = getMs("msFabricante"), fMar = getMs("msMarca"), fTier = getMs("msTier"), fTam = getMs("msTamano");
+  return rows.filter(r => fBan.has(r.bandera) && fNeg.has(r.negocio) && fCat.has(r.categoria) && fFab.has(r.fabricante) && fMar.has(r.marca) && fTier.has(r.tier) && fTam.has(r.tamano));
+}
+// ============ AGGREGATIONS ============
+function sumBy(rows, period, key){
+  const acc = {};
+  for(const r of rows){ if(period.has(r.ym)){ acc[r[key]] = (acc[r[key]]||0) + r.val; } }
+  return acc;
+}
+function sumByVol(rows, period, key){
+  const acc = {};
+  for(const r of rows){ if(period.has(r.ym)){ acc[r[key]] = (acc[r[key]]||0) + r.vol; } }
+  return acc;
+}
+function totalVal(rows, period){ let s=0; for(const r of rows){ if(period.has(r.ym)) s+=r.val; } return s; }
+function totalVol(rows, period){ let s=0; for(const r of rows){ if(period.has(r.ym)) s+=r.vol; } return s; }
+// ============ RENDER BLOQUE 1: MERCADO ============
+function renderBloque1(rows, periods){
+  const volAct = totalVol(rows, periods.actSet);
+  const volLy = totalVol(rows, periods.lySet);
+  const valAct = totalVal(rows, periods.actSet);
+  const valLy = totalVal(rows, periods.lySet);
+  const varVol = safeDiv(volAct - volLy, volLy);
+  const varVal = safeDiv(valAct - valLy, valLy);
+  document.getElementById("kVolAct").textContent = fmtVol(volAct);
+  document.getElementById("kVolActSub").textContent = periods.label;
+  document.getElementById("kVolLy").textContent = fmtVol(volLy);
+  document.getElementById("kVolLySub").textContent = "Año anterior";
+  const varVolEl = document.getElementById("kVolVar");
+  varVolEl.textContent = fmtVar(varVol);
+  varVolEl.className = "kpi-value " + (varVol>0?"up":varVol<0?"down":"neutral");
+  const tendEl = document.getElementById("kTendencia");
+  if(varVol==null){ tendEl.innerHTML = "<span class=\"tendencia t-flat\">Sin LY</span>"; }
+  else if(varVol > 0.03) tendEl.innerHTML = "<span class=\"tendencia t-up\">📈 Creciendo</span>";
+  else if(varVol < -0.03) tendEl.innerHTML = "<span class=\"tendencia t-down\">📉 Cayendo</span>";
+  else tendEl.innerHTML = "<span class=\"tendencia t-flat\">➡️ Estable</span>";
+  document.getElementById("kValMkt").textContent = fmt(valAct);
+  document.getElementById("kValMktSub").innerHTML = `LY: ${fmt(valLy)} · <span class="${varVal>0?"up":"down"}">${fmtVar(varVal)}</span>`;
+  // Chart evolución mensual: Volumen + Valor
+  const monthsSet = new Set();
+  rows.forEach(r => { if(periods.actSet.has(r.ym) || periods.lySet.has(r.ym)) monthsSet.add(r.ym); });
+  const monthsArr = [...monthsSet].sort((a,b) => a-b);
+  const aggVol = {}, aggVal = {};
+  rows.forEach(r => { if(monthsSet.has(r.ym)){ aggVol[r.ym] = (aggVol[r.ym]||0)+r.vol; aggVal[r.ym] = (aggVal[r.ym]||0)+r.val; } });
+  const labels = monthsArr.map(ym => `${MES_NAMES[(ym%100)-1].slice(0,3)} ${String(Math.floor(ym/100)).slice(2)}`);
+  const dataVol = monthsArr.map(ym => aggVol[ym]||0);
+  const dataVal = monthsArr.map(ym => aggVal[ym]||0);
+  if(CHARTS.mkt) CHARTS.mkt.destroy();
+  CHARTS.mkt = new Chart(document.getElementById("chartMkt"), {
+    data: { labels, datasets: [
+      { type:"line", label:"Volumen Mercado", data:dataVol, borderColor:"#4ade80", backgroundColor:"rgba(74,222,128,.15)", fill:true, tension:.3, yAxisID:"yVol", borderWidth:3 },
+      { type:"line", label:"Valor Mercado", data:dataVal, borderColor:"#f0abfc", backgroundColor:"rgba(240,171,252,.05)", fill:false, tension:.3, yAxisID:"yVal", borderDash:[5,5] }
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:"#c0c0e0"}}}, scales:{ x:{ticks:{color:"#a0a0c0"}, grid:{color:"rgba(255,255,255,.05)"}}, yVol:{position:"left", ticks:{color:"#4ade80", callback:v=>fmtVol(v)}, grid:{color:"rgba(255,255,255,.05)"}, title:{display:true,text:"Volumen",color:"#4ade80"}}, yVal:{position:"right", ticks:{color:"#f0abfc", callback:v=>fmt(v)}, grid:{display:false}, title:{display:true,text:"Valor $",color:"#f0abfc"}} } }
+  });
+}
+// ============ RENDER BLOQUE 2: SHARES ============
+function renderBloque2(rows, periods){
+  const valAct = totalVal(rows, periods.actSet);
+  const valLy = totalVal(rows, periods.lySet);
+  // Tabla Fabricantes
+  const fabAct = sumBy(rows, periods.actSet, "fabricante");
+  const fabLy = sumBy(rows, periods.lySet, "fabricante");
+  const allFabs = [...new Set([...Object.keys(fabAct), ...Object.keys(fabLy)])];
+  const rankFab = allFabs.map(f => {
+    const a = fabAct[f]||0, l = fabLy[f]||0;
+    const sa = safeDiv(a, valAct), sl = safeDiv(l, valLy);
+    return { fab:f, a, l, sa, sl, deltaPp: (sa!=null&&sl!=null) ? (sa-sl)*100 : null, varPct: safeDiv(a-l, l) };
+  }).sort((x,y) => y.a - x.a);
+  const tbF = document.querySelector("#tblFab tbody");
+  tbF.innerHTML = rankFab.slice(0,15).map((r,i) => `<tr class="${r.fab==="UNILEVER"?"row-uni":""}"><td>${i+1}</td><td>${r.fab==="UNILEVER"?'<span class="tag tag-uni">UNI</span>':''}${r.fab}</td><td class="num">${fmt(r.a)}</td><td class="num">${fmt(r.l)}</td><td class="num ${r.varPct>0?"up":"down"}">${fmtVar(r.varPct)}</td><td class="num">${fmtShare(r.sa)}</td><td class="num">${fmtShare(r.sl)}</td><td class="num"><span class="${r.deltaPp>0?"gap-pos":"gap-neg"}">${fmtPp(r.deltaPp)}</span></td></tr>`).join("");
+  // Winners & Losers MARCAS — ordenado por IMPACTO $
+  const marAct = {}, marLy = {}, fabOfMar = {};
+  rows.forEach(r => { fabOfMar[r.marca] = r.fabricante; if(periods.actSet.has(r.ym)) marAct[r.marca]=(marAct[r.marca]||0)+r.val; if(periods.lySet.has(r.ym)) marLy[r.marca]=(marLy[r.marca]||0)+r.val; });
+  const allMar = [...new Set([...Object.keys(marAct), ...Object.keys(marLy)])];
+  const rankMar = allMar.map(m => {
+    const a = marAct[m]||0, l = marLy[m]||0;
+    const sa = safeDiv(a, valAct), sl = safeDiv(l, valLy);
+    const deltaPp = (sa!=null&&sl!=null) ? (sa-sl)*100 : null;
+    const impacto = (deltaPp!=null) ? (deltaPp/100)*valAct : null;
+    return { marca:m, fab:fabOfMar[m]||"—", a, l, sa, sl, deltaPp, impacto, varPct: safeDiv(a-l, l) };
+  }).filter(r => r.impacto != null);
+  const winners = [...rankMar].filter(r => r.impacto > 0).sort((x,y) => y.impacto - x.impacto).slice(0,10);
+  const losers = [...rankMar].filter(r => r.impacto < 0).sort((x,y) => x.impacto - y.impacto).slice(0,10);
+  document.querySelector("#tblWin tbody").innerHTML = winners.map(r => `<tr><td>${r.fab==="UNILEVER"?'<span class="tag tag-uni">UNI</span>':''}${r.marca}</td><td>${r.fab}</td><td class="num"><span class="gap-pos">${fmtPp(r.deltaPp)}</span></td><td class="num up">${fmt(r.impacto)}</td><td class="num ${r.varPct>0?"up":"down"}">${fmtVar(r.varPct)}</td></tr>`).join("");
+  document.querySelector("#tblLose tbody").innerHTML = losers.map(r => `<tr><td>${r.fab==="UNILEVER"?'<span class="tag tag-uni">UNI</span>':''}${r.marca}</td><td>${r.fab}</td><td class="num"><span class="gap-neg">${fmtPp(r.deltaPp)}</span></td><td class="num down">${fmt(r.impacto)}</td><td class="num ${r.varPct>0?"up":"down"}">${fmtVar(r.varPct)}</td></tr>`).join("");
+  // Mix Tamaño
+  const tamUni = {}, tamMkt = {};
+  rows.forEach(r => { if(periods.actSet.has(r.ym)){ tamMkt[r.tamano]=(tamMkt[r.tamano]||0)+r.val; if(r.isUni) tamUni[r.tamano]=(tamUni[r.tamano]||0)+r.val; } });
+  const tamLabels = [...new Set([...Object.keys(tamUni), ...Object.keys(tamMkt)])].sort();
+  const totUni = Object.values(tamUni).reduce((a,b)=>a+b,0);
+  const totMkt = Object.values(tamMkt).reduce((a,b)=>a+b,0);
+  if(CHARTS.tam) CHARTS.tam.destroy();
+  CHARTS.tam = new Chart(document.getElementById("chartTam"), {
+    type:"bar", data:{ labels:tamLabels, datasets:[
+      { label:"% Unilever", data: tamLabels.map(t => totUni? (tamUni[t]||0)/totUni*100 : 0), backgroundColor:"rgba(240,147,251,.7)" },
+      { label:"% Mercado", data: tamLabels.map(t => totMkt? (tamMkt[t]||0)/totMkt*100 : 0), backgroundColor:"rgba(160,160,192,.5)" }
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#c0c0e0"}}},scales:{x:{ticks:{color:"#a0a0c0"}},y:{ticks:{color:"#a0a0c0",callback:v=>v.toFixed(0)+"%"}}}}
+  });
+  // Mix Tier
+  const tierUni = {}, tierMkt = {};
+  rows.forEach(r => { if(periods.actSet.has(r.ym)){ tierMkt[r.tier]=(tierMkt[r.tier]||0)+r.val; if(r.isUni) tierUni[r.tier]=(tierUni[r.tier]||0)+r.val; } });
+  const tierLabels = [...new Set([...Object.keys(tierUni), ...Object.keys(tierMkt)])].sort();
+  const totUniT = Object.values(tierUni).reduce((a,b)=>a+b,0);
+  const totMktT = Object.values(tierMkt).reduce((a,b)=>a+b,0);
+  if(CHARTS.tier) CHARTS.tier.destroy();
+  CHARTS.tier = new Chart(document.getElementById("chartTier"), {
+    type:"bar", data:{ labels:tierLabels, datasets:[
+      { label:"% Unilever", data: tierLabels.map(t => totUniT? (tierUni[t]||0)/totUniT*100 : 0), backgroundColor:"rgba(240,147,251,.7)" },
+      { label:"% Mercado", data: tierLabels.map(t => totMktT? (tierMkt[t]||0)/totMktT*100 : 0), backgroundColor:"rgba(160,160,192,.5)" }
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#c0c0e0"}}},scales:{x:{ticks:{color:"#a0a0c0"}},y:{ticks:{color:"#a0a0c0",callback:v=>v.toFixed(0)+"%"}}}}
+  });
+  // Evolución Share Unilever vs Top Competidor
+  const topComp = rankFab.filter(r => r.fab !== "UNILEVER")[0];
+  document.getElementById("topCompLabel").textContent = "Top competidor: " + (topComp ? topComp.fab : "—");
+  const allYms = [...periods.actSet, ...periods.lySet].sort((a,b) => a-b);
+  const ymsTodos = [...new Set(allYms)].sort((a,b)=>a-b);
+  const shUni = ymsTodos.map(ym => {
+    let totFab = 0, totMer = 0;
+    rows.forEach(r => { if(r.ym === ym){ totMer += r.val; if(r.isUni) totFab += r.val; } });
+    return totMer ? (totFab/totMer)*100 : null;
+  });
+  const shComp = ymsTodos.map(ym => {
+    if(!topComp) return null;
+    let totFab = 0, totMer = 0;
+    rows.forEach(r => { if(r.ym === ym){ totMer += r.val; if(r.fabricante === topComp.fab) totFab += r.val; } });
+    return totMer ? (totFab/totMer)*100 : null;
+  });
+  const labelsEv = ymsTodos.map(ym => `${MES_NAMES[(ym%100)-1].slice(0,3)} ${String(Math.floor(ym/100)).slice(2)}`);
+  if(CHARTS.shareEvol) CHARTS.shareEvol.destroy();
+  CHARTS.shareEvol = new Chart(document.getElementById("chartShareEvol"), {
+    type:"line", data:{ labels:labelsEv, datasets:[
+      { label:"Share Unilever %", data:shUni, borderColor:"#f0abfc", backgroundColor:"rgba(240,147,251,.15)", fill:true, tension:.3, borderWidth:3 },
+      { label:`Share ${topComp?topComp.fab:"Top Comp"} %`, data:shComp, borderColor:"#a5b4fc", backgroundColor:"rgba(165,180,252,.05)", fill:false, tension:.3, borderDash:[5,5] }
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#c0c0e0"}}},scales:{x:{ticks:{color:"#a0a0c0"}},y:{ticks:{color:"#a0a0c0",callback:v=>v.toFixed(1)+"%"}}}}
+  });
+}
+// ============ RENDER BLOQUE 3: OPORTUNIDADES / AMENAZAS ============
+function computeSegments(rows, periods, dimKeys){
+  // Agrupa por combinación de claves dimKeys (ej: ["categoria","tier","tamano"]) y calcula val_act, val_ly, val_uni_act, val_uni_ly, share_act, share_ly, deltaPp, impacto
+  const segs = {};
+  rows.forEach(r => {
+    const key = dimKeys.map(k => r[k]).join("|");
+    if(!segs[key]) segs[key] = { keys:dimKeys.map(k => r[k]), valAct:0, valLy:0, valUniAct:0, valUniLy:0 };
+    if(periods.actSet.has(r.ym)){ segs[key].valAct += r.val; if(r.isUni) segs[key].valUniAct += r.val; }
+    if(periods.lySet.has(r.ym)){ segs[key].valLy += r.val; if(r.isUni) segs[key].valUniLy += r.val; }
+  });
+  return Object.values(segs).map(s => {
+    const sa = safeDiv(s.valUniAct, s.valAct);
+    const sl = safeDiv(s.valUniLy, s.valLy);
+    const deltaPp = (sa!=null && sl!=null) ? (sa-sl)*100 : null;
+    const varMkt = safeDiv(s.valAct - s.valLy, s.valLy);
+    const varUni = safeDiv(s.valUniAct - s.valUniLy, s.valUniLy);
+    const impacto = (deltaPp!=null) ? (deltaPp/100)*s.valAct : null;
+    return { ...s, sa, sl, deltaPp, varMkt, varUni, impacto };
+  });
+}
+function renderBloque3(rows, periods){
+  const segs = computeSegments(rows, periods, ["categoria","tier","tamano"]);
+  // OPORTUNIDADES: mercado crece > 5% Y unilever pierde share o crece menos · drill-down con marcas Unilever del segmento
+  const opsBase = segs.filter(s => s.varMkt!=null && s.varMkt > 0.05 && s.deltaPp!=null && s.deltaPp < 0 && s.valAct > 0).sort((a,b) => a.impacto - b.impacto).slice(0,15);
+  const ops = opsBase.map(s => { const cat=s.keys[0], tier=s.keys[1], tam=s.keys[2]; const marcasMap = {}; rows.forEach(r => { if(!r.isUni) return; if(r.categoria!==cat || r.tier!==tier || r.tamano!==tam) return; if(!marcasMap[r.marca]) marcasMap[r.marca] = {a:0,l:0}; if(periods.actSet.has(r.ym)) marcasMap[r.marca].a += r.val; if(periods.lySet.has(r.ym)) marcasMap[r.marca].l += r.val; }); const marcasUni = Object.entries(marcasMap).map(([m,v]) => { const sa=safeDiv(v.a,s.valAct), sl=safeDiv(v.l,s.valLy); const dpp=(sa!=null&&sl!=null)?(sa-sl)*100:null; const imp=(dpp!=null)?(dpp/100)*s.valAct:null; const vp=safeDiv(v.a-v.l,v.l); return { marca:m, valAct:v.a, valLy:v.l, deltaPp:dpp, impacto:imp, varPct:vp }; }).filter(x=>x.deltaPp!=null).sort((a,b)=>a.deltaPp-b.deltaPp); return { ...s, marcasUni }; });
+
+  document.querySelector("#tblOp tbody").innerHTML = ops.length ? ops.map((s,i) => `<tr class="row-am" data-idx="${i}" onclick="toggleDetailOp(${i})"><td><span class="caret">▶</span></td><td>${s.keys[0]}</td><td>${s.keys[1]}</td><td>${s.keys[2]}</td><td class="num up">${fmtVar(s.varMkt)}</td><td class="num ${s.varUni>0?"up":"down"}">${fmtVar(s.varUni)}</td><td class="num"><span class="gap-neg">${fmtPp(s.deltaPp)}</span></td><td class="num down">${fmt(s.impacto)}</td></tr>`).join("") : '<tr><td colspan="8" style="text-align:center;color:#8a8ab0;padding:20px">Sin oportunidades detectadas con los filtros actuales.</td></tr>';
+  // AMENAZAS: por segmento, identificar el competidor que más share ganó
+  // Agrupar por (cat,tier,tamano,fabricante) para calcular delta share por competidor
+  const segCompMap = {};
+  rows.forEach(r => {
+    const segKey = `${r.categoria}|${r.tier}|${r.tamano}`;
+    if(!segCompMap[segKey]) segCompMap[segKey] = { keys:[r.categoria,r.tier,r.tamano], totAct:0, totLy:0, comps:{}, uniAct:0, uniLy:0, marcasComp:{} };
+    const isAct = periods.actSet.has(r.ym), isLy = periods.lySet.has(r.ym);
+    if(isAct){ segCompMap[segKey].totAct += r.val; if(r.isUni) segCompMap[segKey].uniAct += r.val; if(!segCompMap[segKey].comps[r.fabricante]) segCompMap[segKey].comps[r.fabricante]={a:0,l:0}; segCompMap[segKey].comps[r.fabricante].a += r.val; }
+    if(isLy){ segCompMap[segKey].totLy += r.val; if(r.isUni) segCompMap[segKey].uniLy += r.val; if(!segCompMap[segKey].comps[r.fabricante]) segCompMap[segKey].comps[r.fabricante]={a:0,l:0}; segCompMap[segKey].comps[r.fabricante].l += r.val; }
+    if(isAct || isLy){ const fk = r.fabricante; if(!segCompMap[segKey].marcasComp[fk]) segCompMap[segKey].marcasComp[fk] = {}; if(!segCompMap[segKey].marcasComp[fk][r.marca]) segCompMap[segKey].marcasComp[fk][r.marca] = {a:0,l:0}; if(isAct) segCompMap[segKey].marcasComp[fk][r.marca].a += r.val; if(isLy) segCompMap[segKey].marcasComp[fk][r.marca].l += r.val; }
+  });
+  const amenazas = Object.values(segCompMap).map(s => {
+    const uniSa = safeDiv(s.uniAct, s.totAct), uniSl = safeDiv(s.uniLy, s.totLy);
+    const uniDelta = (uniSa!=null && uniSl!=null) ? (uniSa-uniSl)*100 : null;
+    let topComp = null, topDelta = -Infinity;
+    Object.keys(s.comps).forEach(fab => { if(fab==="UNILEVER") return; const ca = s.comps[fab].a, cl = s.comps[fab].l; const sa=safeDiv(ca,s.totAct), sl=safeDiv(cl,s.totLy); if(sa!=null && sl!=null){ const d=(sa-sl)*100; if(d > topDelta){ topDelta=d; topComp=fab; } } });
+    const impactoUni = (uniDelta!=null) ? (uniDelta/100)*s.totAct : null;
+    const impactoComp = (topDelta!==-Infinity && topDelta!=null) ? (topDelta/100)*s.totAct : null;
+    const marcasTop = topComp && s.marcasComp[topComp] ? Object.entries(s.marcasComp[topComp]).map(([m,v]) => { const sa=safeDiv(v.a,s.totAct), sl=safeDiv(v.l,s.totLy); const dpp=(sa!=null&&sl!=null)?(sa-sl)*100:null; const imp=(dpp!=null)?(dpp/100)*s.totAct:null; const vp=safeDiv(v.a-v.l,v.l); return { marca:m, valAct:v.a, valLy:v.l, deltaPp:dpp, impacto:imp, varPct:vp }; }).filter(x=>x.deltaPp!=null).sort((a,b)=>b.deltaPp-a.deltaPp) : [];
+    return { keys:s.keys, topComp, topDelta:topDelta===-Infinity?null:topDelta, uniDelta, impactoUni, impactoComp, totAct:s.totAct, marcasTop };
+  }).filter(s => s.uniDelta!=null && s.uniDelta < 0 && s.topDelta!=null && s.topDelta > 0 && s.totAct > 0)
+    .sort((a,b) => a.impactoUni - b.impactoUni)
+    .slice(0,15);
+  document.querySelector("#tblAm tbody").innerHTML = amenazas.length ? amenazas.map((s,i) => `<tr class="row-am" data-idx="${i}" onclick="toggleDetailAm(${i})"><td><span class="caret">▶</span></td><td>${s.keys[0]}</td><td>${s.keys[1]}</td><td>${s.keys[2]}</td><td><span class="tag tag-comp">${s.topComp}</span></td><td class="num"><span class="gap-pos">${fmtPp(s.topDelta)}</span></td><td class="num up">${fmt(s.impactoComp)}</td><td class="num"><span class="gap-neg">${fmtPp(s.uniDelta)}</span></td><td class="num down">${fmt(s.impactoUni)}</td></tr>`).join("") : '<tr><td colspan="9" style="text-align:center;color:#8a8ab0;padding:20px">Sin amenazas detectadas con los filtros actuales.</td></tr>';
+  window.__lastOps = ops;
+  window.__lastAm = amenazas;
+  // (window.__lastFabRank se setea abajo)
+  window.__lastFabRank = segs;
+}
+// ============ DRILL-DOWN AMENAZAS (marcas del competidor) ============
+function toggleDetailAm(idx){
+  const tbody = document.querySelector("#tblAm tbody");
+  const row = tbody.querySelector(`tr.row-am[data-idx="${idx}"]`);
+  if(!row) return;
+  const next = row.nextElementSibling;
+  if(next && next.classList.contains("detail-row") && next.dataset.parent===String(idx)){ next.remove(); row.classList.remove("expanded"); return; }
+  tbody.querySelectorAll("tr.detail-row").forEach(d => d.remove()); tbody.querySelectorAll("tr.row-am.expanded").forEach(r => r.classList.remove("expanded"));
+  const am = (window.__lastAm || [])[idx]; if(!am) return;
+  const marcas = am.marcasTop || [];
+  const winnersM = marcas.filter(m => m.deltaPp > 0).slice(0,5);
+  const losersM = marcas.filter(m => m.deltaPp < 0).slice(-3).reverse();
+  const buildRows = arr => arr.length ? arr.map(m => `<tr><td><strong>${m.marca}</strong></td><td class="num">${fmt(m.valAct)}</td><td class="num">${fmt(m.valLy)}</td><td class="num ${m.varPct>0?'up':'down'}">${fmtVar(m.varPct)}</td><td class="num"><span class="${m.deltaPp>0?'gap-pos':'gap-neg'}">${fmtPp(m.deltaPp)}</span></td><td class="num ${m.impacto>0?'up':'down'}">${fmt(m.impacto)}</td></tr>`).join("") : '<tr><td colspan="6" style="text-align:center;color:#8a8ab0;padding:8px">Sin datos</td></tr>';
+  const html = `<tr class="detail-row" data-parent="${idx}"><td colspan="9"><div class="detail-inner"><div class="detail-title">🔬 Marcas de ${am.topComp} en ${am.keys[0]} · ${am.keys[1]} · ${am.keys[2]} — Δ Share total ${fmtPp(am.topDelta)}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px"><div><div style="font-size:11px;color:#4ade80;font-weight:600;margin-bottom:4px">▲ Marcas que GANARON share</div><table class="detail-table"><thead><tr><th>Marca</th><th class="num">Val Act</th><th class="num">Val LY</th><th class="num">Var %</th><th class="num">Δ Share (pp)</th><th class="num">Impacto $</th></tr></thead><tbody>${buildRows(winnersM)}</tbody></table></div><div><div style="font-size:11px;color:#f87171;font-weight:600;margin-bottom:4px">▼ Marcas que PERDIERON share</div><table class="detail-table"><thead><tr><th>Marca</th><th class="num">Val Act</th><th class="num">Val LY</th><th class="num">Var %</th><th class="num">Δ Share (pp)</th><th class="num">Impacto $</th></tr></thead><tbody>${buildRows(losersM)}</tbody></table></div></div></div></td></tr>`;
+  row.insertAdjacentHTML("afterend", html); row.classList.add("expanded");
+}
+// ============ DRILL-DOWN OPORTUNIDADES (marcas Unilever del segmento) ============
+function toggleDetailOp(idx){
+  const tbody = document.querySelector("#tblOp tbody");
+  const row = tbody.querySelector(`tr.row-am[data-idx="${idx}"]`);
+  if(!row) return;
+  const next = row.nextElementSibling;
+  if(next && next.classList.contains("detail-row") && next.dataset.parent===String(idx)){ next.remove(); row.classList.remove("expanded"); return; }
+  tbody.querySelectorAll("tr.detail-row").forEach(d => d.remove()); tbody.querySelectorAll("tr.row-am.expanded").forEach(r => r.classList.remove("expanded"));
+  const op = (window.__lastOps || [])[idx]; if(!op) return;
+  const marcas = op.marcasUni || [];
+  const losersM = marcas.filter(m => m.deltaPp < 0).slice(0,5);
+  const winnersM = marcas.filter(m => m.deltaPp > 0).slice(-3).reverse();
+  const buildRows = arr => arr.length ? arr.map(m => `<tr><td><strong>${m.marca}</strong></td><td class="num">${fmt(m.valAct)}</td><td class="num">${fmt(m.valLy)}</td><td class="num ${m.varPct>0?'up':'down'}">${fmtVar(m.varPct)}</td><td class="num"><span class="${m.deltaPp>0?'gap-pos':'gap-neg'}">${fmtPp(m.deltaPp)}</span></td><td class="num ${m.impacto>0?'up':'down'}">${fmt(m.impacto)}</td></tr>`).join("") : '<tr><td colspan="6" style="text-align:center;color:#8a8ab0;padding:10px;font-style:italic">Sin marcas en este grupo</td></tr>';
+  const html = `<tr class="detail-row" data-parent="${idx}"><td colspan="8"><div class="detail-inner"><div class="detail-title">🔬 Marcas UNILEVER en ${op.keys[0]} · ${op.keys[1]} · ${op.keys[2]} — Δ Share Uni total ${fmtPp(op.deltaPp)} · Mercado +${(op.varMkt*100).toFixed(1)}%</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px"><div><div class="detail-title" style="color:#f87171">▼ Marcas Uni que PIERDEN share (top 5)</div><table class="detail-table"><thead><tr><th>Marca</th><th class="num">Val Act</th><th class="num">Val LY</th><th class="num">Var %</th><th class="num">Δ Share (pp)</th><th class="num">Impacto $</th></tr></thead><tbody>${buildRows(losersM)}</tbody></table></div><div><div class="detail-title" style="color:#4ade80">▲ Marcas Uni que GANAN share (top 3)</div><table class="detail-table"><thead><tr><th>Marca</th><th class="num">Val Act</th><th class="num">Val LY</th><th class="num">Var %</th><th class="num">Δ Share (pp)</th><th class="num">Impacto $</th></tr></thead><tbody>${buildRows(winnersM)}</tbody></table></div></div></div></td></tr>`;
+  row.insertAdjacentHTML("afterend", html); row.classList.add("expanded");
+}
+// ============ ORQUESTADOR ============
+function onFiltersChange(){
+  if(!RAW.length) return;
+  try {
+    const periods = getPeriods();
+    const rows = applyDimFilter(RAW);
+    renderBloque1(rows, periods);
+    renderBloque2(rows, periods);
+    renderBloque3(rows, periods);
+    window.__lastRows = rows;
+    window.__lastPeriods = periods;
+  } catch(err){
+    showError("Error al renderizar: " + err.message + "\n" + (err.stack||""));
+  }
+}
+// ============ CHAT IA ============
+function askChatFromInput(){ const v = document.getElementById("chatInput").value.trim(); if(v) askChat(v); }
+document.addEventListener("DOMContentLoaded", () => { const ci = document.getElementById("chatInput"); if(ci) ci.addEventListener("keydown", e => { if(e.key === "Enter") askChatFromInput(); }); });
+function askChat(q){
+  const resp = document.getElementById("chatResp");
+  if(!RAW.length){ resp.innerHTML = "Primero cargá los datos."; return; }
+  const rows = window.__lastRows || applyDimFilter(RAW);
+  const periods = window.__lastPeriods || getPeriods();
+  const ql = q.toLowerCase();
+  const valAct = totalVal(rows, periods.actSet);
+  const valLy = totalVal(rows, periods.lySet);
+  const volAct = totalVol(rows, periods.actSet);
+  const volLy = totalVol(rows, periods.lySet);
+  const varVal = safeDiv(valAct-valLy, valLy);
+  const varVol = safeDiv(volAct-volLy, volLy);
+  const fabAct = sumBy(rows, periods.actSet, "fabricante");
+  const fabLy = sumBy(rows, periods.lySet, "fabricante");
+  const uniAct = fabAct["UNILEVER"]||0, uniLy = fabLy["UNILEVER"]||0;
+  const shareUni = safeDiv(uniAct, valAct), shareUniLy = safeDiv(uniLy, valLy);
+  const deltaUni = (shareUni!=null && shareUniLy!=null) ? (shareUni-shareUniLy)*100 : null;
+  let html = "";
+  if(/resumen|general|estado/.test(ql)){
+    html = `<strong>📊 Resumen del mercado CR · ${periods.label}</strong>\n\n` +
+      `• <strong>Volumen mercado:</strong> ${fmtVol(volAct)} <span class="${varVol>0?"up":"down"}">${fmtVar(varVol)}</span> vs LY (${fmtVol(volLy)})\n` +
+      `• <strong>Valor mercado:</strong> ${fmt(valAct)} <span class="${varVal>0?"up":"down"}">${fmtVar(varVal)}</span> vs LY\n` +
+      `• <strong>Share Unilever:</strong> ${fmtShare(shareUni)} (LY: ${fmtShare(shareUniLy)}) → ${deltaUni!=null?(deltaUni>0?'<span class="up">':'<span class="down">')+fmtPp(deltaUni)+'</span>':'—'}\n` +
+      `• <strong>Tendencia:</strong> ${varVol>0.03?"📈 Mercado en crecimiento":varVol<-0.03?"📉 Mercado en caída":"➡️ Mercado estable"}`;
+  } else if(/share unilever|participacion unilever|cuanto.*unilever/.test(ql)){
+    html = `<strong>🏆 Share Unilever en CR</strong>\n\n` +
+      `• Share actual: <strong>${fmtShare(shareUni)}</strong>\n` +
+      `• Share LY: ${fmtShare(shareUniLy)}\n` +
+      `• Δ: ${deltaUni!=null?(deltaUni>0?'<span class="up">':'<span class="down">')+fmtPp(deltaUni)+'</span>':'—'}\n` +
+      `• Valor Unilever: ${fmt(uniAct)} vs LY ${fmt(uniLy)} (${fmtVar(safeDiv(uniAct-uniLy, uniLy))})`;
+  } else if(/top competidor|principal competidor|quien.*compite/.test(ql)){
+    const compRank = Object.keys(fabAct).filter(f => f!=="UNILEVER").map(f => ({ fab:f, val:fabAct[f] })).sort((a,b)=>b.val-a.val).slice(0,5);
+    html = `<strong>⚔️ Top 5 competidores (por valor en CR)</strong>\n\n` + compRank.map((c,i) => `${i+1}. <strong>${c.fab}</strong> · ${fmt(c.val)} · share ${fmtShare(safeDiv(c.val, valAct))}`).join("\n");
+  } else if(/mejor marca|marca.*crec|winner|gana/.test(ql)){
+    const marAct = {}, marLy = {}, fabOf = {};
+    rows.forEach(r => { fabOf[r.marca]=r.fabricante; if(periods.actSet.has(r.ym)) marAct[r.marca]=(marAct[r.marca]||0)+r.val; if(periods.lySet.has(r.ym)) marLy[r.marca]=(marLy[r.marca]||0)+r.val; });
+    const top = Object.keys(marAct).map(m => { const a=marAct[m]||0, l=marLy[m]||0; const sa=safeDiv(a,valAct), sl=safeDiv(l,valLy); const dpp=(sa!=null&&sl!=null)?(sa-sl)*100:null; const imp=(dpp!=null)?(dpp/100)*valAct:null; return { m, fab:fabOf[m], dpp, imp, varPct:safeDiv(a-l,l) }; }).filter(r=>r.imp!=null&&r.imp>0).sort((a,b)=>b.imp-a.imp).slice(0,5);
+    html = `<strong>🚀 Top 5 marcas que más crecen (impacto $)</strong>\n\n` + top.map((r,i) => `${i+1}. <strong>${r.m}</strong> (${r.fab}) · <span class="up">${fmt(r.imp)}</span> · ${fmtPp(r.dpp)} · ${fmtVar(r.varPct)}`).join("\n");
+  } else if(/peor marca|marca.*cae|loser|pierde/.test(ql)){
+    const marAct = {}, marLy = {}, fabOf = {};
+    rows.forEach(r => { fabOf[r.marca]=r.fabricante; if(periods.actSet.has(r.ym)) marAct[r.marca]=(marAct[r.marca]||0)+r.val; if(periods.lySet.has(r.ym)) marLy[r.marca]=(marLy[r.marca]||0)+r.val; });
+    const top = Object.keys(marAct).map(m => { const a=marAct[m]||0, l=marLy[m]||0; const sa=safeDiv(a,valAct), sl=safeDiv(l,valLy); const dpp=(sa!=null&&sl!=null)?(sa-sl)*100:null; const imp=(dpp!=null)?(dpp/100)*valAct:null; return { m, fab:fabOf[m], dpp, imp, varPct:safeDiv(a-l,l) }; }).filter(r=>r.imp!=null&&r.imp<0).sort((a,b)=>a.imp-b.imp).slice(0,5);
+    html = `<strong>📉 Top 5 marcas que más caen (impacto $)</strong>\n\n` + top.map((r,i) => `${i+1}. <strong>${r.m}</strong> (${r.fab}) · <span class="down">${fmt(r.imp)}</span> · ${fmtPp(r.dpp)} · ${fmtVar(r.varPct)}`).join("\n");
+  } else if(/oportunidad/.test(ql)){
+    const ops = window.__lastOps || [];
+    if(!ops.length) html = "<strong>🎯 Oportunidades</strong>\n\nNo se detectaron oportunidades con los filtros actuales (mercado creciendo + Unilever perdiendo share)."; 
+    else html = `<strong>🎯 Top 5 oportunidades para Unilever</strong>\n\n` + ops.slice(0,5).map((o,i) => `${i+1}. <strong>${o.keys[0]}</strong> · ${o.keys[1]} · ${o.keys[2]}\n   Mercado <span class="up">${fmtVar(o.varMkt)}</span> | Uni <span class="${o.varUni>0?"up":"down"}">${fmtVar(o.varUni)}</span> | Δ ${fmtPp(o.deltaPp)} | Impacto: <span class="down">${fmt(o.impacto)}</span>`).join("\n\n");
+  } else if(/amenaza/.test(ql)){
+    const am = window.__lastAm || [];
+    if(!am.length) html = "<strong>🚨 Amenazas</strong>\n\nNo se detectaron amenazas con los filtros actuales."; 
+    else html = `<strong>🚨 Top 5 amenazas</strong>\n\n` + am.slice(0,5).map((a,i) => `${i+1}. <strong>${a.keys[0]}</strong> · ${a.keys[1]} · ${a.keys[2]}\n   Competidor: <strong>${a.topComp}</strong> ganó ${fmtPp(a.topDelta)}\n   Uni perdió ${fmtPp(a.uniDelta)} → impacto <span class="down">${fmt(a.impactoUni)}</span>`).join("\n\n");
+  } else if(/premium|mix premium/.test(ql)){
+    const tierUni = {}, tierMkt = {};
+    rows.forEach(r => { if(periods.actSet.has(r.ym)){ tierMkt[r.tier]=(tierMkt[r.tier]||0)+r.val; if(r.isUni) tierUni[r.tier]=(tierUni[r.tier]||0)+r.val; } });
+    const totU=Object.values(tierUni).reduce((a,b)=>a+b,0), totM=Object.values(tierMkt).reduce((a,b)=>a+b,0);
+    const premUni = (tierUni["PREMIUM"]||0)+(tierUni["SUPER PREMIUM"]||0);
+    const premMkt = (tierMkt["PREMIUM"]||0)+(tierMkt["SUPER PREMIUM"]||0);
+    const mixU = safeDiv(premUni, totU), mixM = safeDiv(premMkt, totM);
+    html = `<strong>💎 Mix Premium (PREMIUM + SUPER PREMIUM)</strong>\n\n` +
+      `• Mix Premium Unilever: <strong>${fmtShare(mixU)}</strong>\n` +
+      `• Mix Premium Mercado: ${fmtShare(mixM)}\n` +
+      `• Diferencia: ${mixU!=null&&mixM!=null?fmtPp((mixU-mixM)*100):"—"}\n` +
+      `${mixU>mixM?"✅ Unilever está sobre-indexado en Premium":"⚠️ Unilever está sub-indexado en Premium"}`;
+  } else if(/tendencia|crece|cae|mercado/.test(ql)){
+    html = `<strong>📈 Tendencia del mercado CR</strong>\n\n` +
+      `• Volumen: <span class="${varVol>0?"up":"down"}">${fmtVar(varVol)}</span> (${fmtVol(volLy)} → ${fmtVol(volAct)})\n` +
+      `• Valor: <span class="${varVal>0?"up":"down"}">${fmtVar(varVal)}</span> (${fmt(valLy)} → ${fmt(valAct)})\n` +
+      `• Diagnóstico: ${varVol>0.03?"📈 Mercado en franco crecimiento":varVol<-0.03?"📉 Mercado en contracción":"➡️ Mercado relativamente estable"}\n` +
+      `${varVal>varVol?"💰 Crecimiento más por precio que volumen":varVol>varVal?"📦 Crecimiento más por volumen":""}`;
+  } else if(/insight|ejecutivo|recomenda/.test(ql)){
+    const ops = (window.__lastOps||[]).slice(0,3);
+    const am = (window.__lastAm||[]).slice(0,3);
+    html = `<strong>💡 Insight ejecutivo</strong>\n\n` +
+      `<strong>Estado:</strong>\n` +
+      `• Mercado CR ${varVol>0?"crece":"cae"} <span class="${varVol>0?"up":"down"}">${fmtVar(varVol)}</span> en volumen\n` +
+      `• Unilever ${deltaUni>0?"gana":deltaUni<0?"pierde":"mantiene"} ${deltaUni!=null?fmtPp(deltaUni):"—"} de share\n\n` +
+      `<strong>Top 3 oportunidades ($):</strong>\n` + (ops.length?ops.map(o => `• ${o.keys[0]} · ${o.keys[1]} → ${fmt(o.impacto)}`).join("\n"):"• Sin oportunidades detectadas") + `\n\n` +
+      `<strong>Top 3 amenazas ($):</strong>\n` + (am.length?am.map(a => `• ${a.keys[0]} · ${a.topComp} → ${fmt(a.impactoUni)}`).join("\n"):"• Sin amenazas detectadas");
+  } else {
+    html = "🤔 No te entendí. Probá con: <em>resumen, share unilever, top competidor, mejor marca, peor marca, oportunidades, amenazas, premium, tendencia, insight</em>.";
+  }
+  resp.innerHTML = html;
+}
+// ============ EXPORT ============
+function exportCSV(){
+  if(!RAW.length){ alert("Primero cargá los datos."); return; }
+  const ops = window.__lastOps || [];
+  const am = window.__lastAm || [];
+  let csv = "TIPO;CATEGORIA;TIER;TAMANO;COMPETIDOR;VAR_MERCADO;VAR_UNILEVER;DELTA_PP;IMPACTO_USD\n";
+  ops.forEach(o => csv += `OPORTUNIDAD;${o.keys[0]};${o.keys[1]};${o.keys[2]};-;${(o.varMkt*100).toFixed(2)}%;${o.varUni!=null?(o.varUni*100).toFixed(2)+"%":"-"};${o.deltaPp.toFixed(2)};${o.impacto.toFixed(0)}\n`);
+  am.forEach(a => csv += `AMENAZA;${a.keys[0]};${a.keys[1]};${a.keys[2]};${a.topComp};-;-;${a.uniDelta.toFixed(2)};${a.impactoUni.toFixed(0)}\n`);
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "competencia_cr_" + Date.now() + ".csv";
+  link.click();
+}
+// ============ FILE LOADER ============
+function showError(msg){ const eb = document.getElementById("errorBoxTop") || document.getElementById("errorBox"); if(eb){ eb.textContent = msg; eb.classList.remove("hidden"); } }
+function clearError(){ ["errorBox","errorBoxTop"].forEach(id => { const e = document.getElementById(id); if(e) e.classList.add("hidden"); }); }
+document.getElementById("fileInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0]; if(!file) return;
+  clearError();
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    const sheetName = wb.SheetNames.find(n => n.toUpperCase().includes("SHARES CR")) || wb.SheetNames.find(n => n.toUpperCase().includes("SHARES")) || wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:null, raw:true });
+    RAW = parseSheet(rows);
+    document.getElementById("emptyState").classList.add("hidden");
+    document.getElementById("dashContent").classList.remove("hidden");
+    buildFilters();
+    onFiltersChange();
+  } catch(err){
+    showError("Error al cargar: " + err.message + "\n" + (err.stack||""));
+  }
+});
+function loadFromPaste(){
+  const txt = document.getElementById("pasteArea").value.trim();
+  if(!txt){ showError("Pegá datos primero."); return; }
+  clearError();
+  try {
+    const sep = txt.includes("\t") ? "\t" : (txt.includes(";") ? ";" : ",");
+    const rows = txt.split(/\r?\n/).map(l => l.split(sep));
+    RAW = parseSheet(rows);
+    document.getElementById("emptyState").classList.add("hidden");
+    document.getElementById("dashContent").classList.remove("hidden");
+    buildFilters();
+    onFiltersChange();
+  } catch(err){
+    showError("Error al parsear: " + err.message);
+  }
+}
+</script>
+</body>
+</html>
